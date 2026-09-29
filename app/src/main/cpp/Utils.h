@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <raymob.h>
 #include <math.h>
 
 #pragma once
@@ -19,6 +20,29 @@ public:
 		float magnitude = sqrt((v.x * v.x) + (v.y * v.y));
 
 		return magnitude;
+	}
+
+	template <typename T>
+	static T LoadData(const char *filepath)
+	{
+		int dataSize = 0;
+
+		void *loadedData = ReadFromAppStorage(filepath, &dataSize);
+
+		if (loadedData == NULL || dataSize != sizeof(T))
+		{
+			if (loadedData != NULL)
+				RL_FREE(loadedData);
+
+			return T();
+		}
+
+		T data;
+		memcpy(&data, loadedData, sizeof(T));
+
+		RL_FREE(loadedData);
+
+		return data;
 	}
 
 	#ifdef PLATFORM_WEB

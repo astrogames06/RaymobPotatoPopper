@@ -6,6 +6,8 @@
 #include "FrenchFries_img.h"
 #include "Utils.h"
 
+#include <raymob.h>
+
 #ifdef PLATFORM_WEB
 
     #include <emscripten/emscripten.h>
@@ -40,6 +42,8 @@ void Game::Setup()
         (float)GetRandomValue(FryTexture.width, WIDTH-FryTexture.width), 
         (float)GetRandomValue(HEIGHT-FryTexture.height, HEIGHT/2)
     } };
+
+    high_score = Utils::LoadData<int>("potato_popper_high_score.dat");
 }
 
 void Game::Init()
@@ -81,16 +85,22 @@ void Game::Draw()
 
     if (state == State::MENU)
     {
-        // std::string high_score_str = "High Score: " + std::to_string(Utils::GetLocal("high_score"));
-        // DrawText(high_score_str.c_str(), Game::WIDTH / 2 - MeasureText(high_score_str.c_str(), 20)/2, HEIGHT/2-100, 20, BLACK);
-        DrawText("Tap To Start!", Game::WIDTH / 2 - 125, Game::HEIGHT / 2 - 150, 20, BLACK);
+        std::string high_score_str = "High Score: " + std::to_string(high_score);
+        DrawText(high_score_str.c_str(), Game::WIDTH / 2 - MeasureText(high_score_str.c_str(), 20)/2, HEIGHT/2-100, 20, BLACK);
+        DrawText("Tap To Start!",
+            Game::WIDTH/2-MeasureText("Tap To Start!", 20)/2,
+            Game::HEIGHT / 2 - 150, 20,
+        BLACK);
 
         if (IsKeyDown(KEY_SPACE) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             state = State::GAME;
     }
     if (state == State::GAME)
     {
-        DrawText(std::to_string(score).c_str(), Game::WIDTH / 2 - 10 / 2, Game::HEIGHT / 2 - 10 / 2, 50, LIGHTGRAY);
+        DrawText(std::to_string(score).c_str(),
+            Game::WIDTH / 2 - MeasureText(std::to_string(score).c_str(), 50),
+            Game::HEIGHT / 2 - 10 / 2, 50,
+        LIGHTGRAY);
 
         for (int i = 0; i < (int)fries.size(); i++)
         {
@@ -111,6 +121,8 @@ void Game::Draw()
                     (float)GetRandomValue(FryTexture.width, WIDTH-FryTexture.width), 
                     (float)GetRandomValue(HEIGHT-FryTexture.height, HEIGHT/4) 
                 };
+                VibrateExMS(50, 0.3f);
+                VibrateExMS(50, 0.3f);
                 //fries.erase(fries.begin() + i);
             }
         }

@@ -3,9 +3,12 @@
 #include "Utils.h"
 #include "Potato_img.h"
 
+#include <raymob.h>
 #include <raymath.h>
 
 #include <iostream>
+
+Vector2 first_touch_position;
 
 void Potato::Init()
 {
@@ -32,14 +35,20 @@ void Potato::Init()
 	SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
 }
 
+bool popped = false;
 void Potato::Update()
 {
+	first_touch_position = {
+		(float)GetTouchX() * Game::WIDTH / GetScreenWidth(),
+    	(float)GetTouchY() * Game::HEIGHT / GetScreenHeight()
+	};
+
 	if (IsKeyDown(KEY_A))
 		rotation += 0.3f;
 	if (IsKeyDown(KEY_D))
 		rotation -= 0.3f;
 
-	this->rel = Vector2{ GetMouseX() - position.x, GetMouseY() - position.y };
+	this->rel = Vector2{ first_touch_position.x - position.x, first_touch_position.y - position.y };
 	this->mag = Utils::magnitude(rel);
 
 	velocity.x += (acceleration.x * 100) * GetFrameTime();
@@ -48,20 +57,28 @@ void Potato::Update()
 	position.x += velocity.x * 30 * GetFrameTime();
 	position.y += velocity.y * 30 * GetFrameTime();
 
-	rotation = atan2(position.y - GetMouseY(), position.x - GetMouseX()) * RAD2DEG + 90;
+	rotation = atan2(position.y - first_touch_position.y, position.x - first_touch_position.x) * RAD2DEG + 90;
 
-	if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	if ((IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || GetTouchPointCount() >= 2) && !popped)
 	{
 		velocity.x += (-(rel.x / mag) * 1000) * GetFrameTime();
 		velocity.y += (-(rel.y / mag) * 1000) * GetFrameTime();
 
 		PlaySound(PopSound);
+
+		popped = true;
+	}
+	if (GetTouchPointCount() < 2)
+	{
+		popped = false;
 	}
 
+	// Roof bounce
 	if (position.y <= texture.height / 2)
 	{
 		position.y = texture.height / 2;
 		velocity.y *= -1;
+		VibrateExMS(50, 0.3f);
 
 		// if (acceleration.y > 0)
 		// {
@@ -73,27 +90,32 @@ void Potato::Update()
 	}
 	if (position.y > Game::HEIGHT)
 	{
-		// if (score > Utils::GetLocal("high_score"))
-		// {
-		// 	Utils::SetLocal("high_score", score);
-		// }
+		if (score > Game::high_score)
+		{
+			Game::high_score = score;
+			WriteToAppStorage("potato_popper_high_score.dat", &Game::high_score, sizeof(Game::high_score));
+		}
 		Game::Setup();
 		Game::state = Game::MENU;
 	}
 	
 	// Run();
 
+	// Wall Bounces
 	if (position.x > Game::WIDTH - texture.width / 2)
 	{
 		position.x = Game::WIDTH - texture.width / 2;
 		velocity.x *= -1;
+
+		VibrateExMS(50, 0.3f);
 	}
 		//position.x = 0;
 	if (position.x < texture.width / 2)
 	{
 		position.x = texture.width / 2;
-
 		velocity.x *= -1;
+
+		VibrateExMS(50, 0.3f);
 	}
 		//position.x = Game::WIDTH;
 }

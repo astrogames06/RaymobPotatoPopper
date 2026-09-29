@@ -20,6 +20,8 @@ public:
 	static inline RenderTexture2D GameTexture;
 	inline static State state;
 
+	static inline int high_score;
+
 	static void Init();
 	static void Setup();
 	static void Update();
